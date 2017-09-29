@@ -1,0 +1,35 @@
+{
+  "name": "relimit",
+  "version": "1.0.0",
+  "description": "Rate limiter with tuneable scheduler and distributed run support.",
+  "keywords": [
+    "leaky",
+    "leaky bucket",
+    "rate",
+    "limit",
+    "limiter",
+    "rate limiter"
+  ],
+  "repository": "nodeca/relimit",
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "lib/"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "test": "npm run lint && mocha",
+    "coverage": "rm -rf coverage && istanbul cover _mocha",
+    "report-coveralls": "istanbul cover _mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | coveralls && rm -rf ./coverage"
+  },
+  "dependencies": {
+    "bluebird": "^3.4.7",
+    "redis": "^2.6.3"
+  },
+  "devDependencies": {
+    "coveralls": "^3.0.0",
+    "eslint": "^4.1.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.2.0"
+  }
+}
