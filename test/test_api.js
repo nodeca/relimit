@@ -52,15 +52,64 @@ describe('relimit', function () {
 
     relimit.push([ 1, 2, 3, 4, 5 ]);
 
-    assert.deepEqual(relimit.stat(), { active: 0, pending: 5, total: 5 });
-    assert.deepEqual(relimit.stat(0), { active: 0, pending: 2, total: 2 });
-    assert.deepEqual(relimit.stat(1), { active: 0, pending: 3, total: 3 });
+    assert.deepEqual(relimit.stat(), { active: 2, pending: 3, total: 5 });
+    assert.deepEqual(relimit.stat(0), { active: 1, pending: 1, total: 2 });
+    assert.deepEqual(relimit.stat(1), { active: 1, pending: 2, total: 3 });
     assert.deepEqual(relimit.stat(1234), { active: 0, pending: 0, total: 0 });
 
     await relimit.wait();
 
     assert.deepEqual(relimit.stat(), { active: 0, pending: 0, total: 0 });
     assert.deepEqual(relimit.stat(0), { active: 0, pending: 0, total: 0 });
+  });
+
+
+  it('consume should be able to limit active items based on stats', async function () {
+    let max_global = 3;
+    let max_group = 2;
+
+    let active_count = { '': 0, 1: 0, 2: 0 };
+    let group_limit_reached = 0;
+    let global_limit_reached = 0;
+
+    let relimit = new Relimit({
+      rate: '1000/1s',
+      consume(item) {
+        if (this.stat().active >= max_global ||
+            this.stat(item).active >= max_group) {
+
+          return false;
+        }
+
+        return true;
+      },
+      async process(item) {
+        active_count['']++;
+        active_count[item]++;
+
+        assert(active_count[''] <= max_global);
+        assert(active_count[item] <= max_group);
+
+        if (active_count[''] === max_global) global_limit_reached++;
+        if (active_count[item] === max_group) group_limit_reached++;
+
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert(active_count[''] <= max_global);
+        assert(active_count[item] <= max_group);
+
+        active_count['']--;
+        active_count[item]--;
+      },
+      normalize(item) { return item; }
+    });
+
+    relimit.push([ 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2  ]);
+
+    await relimit.wait();
+
+    assert(group_limit_reached);
+    assert(global_limit_reached);
   });
 
 
